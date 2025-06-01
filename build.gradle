@@ -3,6 +3,8 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    // This should be below the net.minecraftforge.gradle plugin
+     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
 }
 
 version = mod_version
