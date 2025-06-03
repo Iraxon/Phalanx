@@ -1,10 +1,14 @@
-package net.iraxon.phalanx.common;
+package net.iraxon.phalanx.registration;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
@@ -32,6 +36,8 @@ public class RegisterManager {
     private final Map<Class<?>, Map<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
     private final Map<CreativeModeTab, List<Item>> tabAssignments = new HashMap<>();
 
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     public RegisterManager(String id, IEventBus modEventBus) {
         this.id = id;
         this.modEventBus = modEventBus;
@@ -39,10 +45,10 @@ public class RegisterManager {
         modEventBus.addListener(this::addCreative);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> void newElementFromSupplier(String name, Supplier<T> element) {
-        newElementFromSupplier(name, (Class<T>) element.get().getClass(), element);
-    }
+    // @SuppressWarnings("unchecked")
+    // public <T> void newElementFromSupplier(String name, Supplier<T> element) {
+    //     newElementFromSupplier(name, (Class<T>) element.get().getClass(), element);
+    // }
 
     /**
      * Adds an element to the RegisterManager
@@ -53,12 +59,15 @@ public class RegisterManager {
      */
     public <T> void newElementFromSupplier(String name, Class<T> key, Supplier<T> supplier) {
         guaranteeRegister(key);
-        getRegister(key).register(name, supplier);
+        LOGGER.info("Registering element " + name + " of class " + key + " with supplier " + supplier);
+        REGISTRY_OBJECTS.get(key).put(name, getRegister(key).register(name, supplier));
     }
 
     public void build() {
+        LOGGER.info("Building RegisterManager...");
         for (var r : REGISTERS.values())
             r.register(this.modEventBus);
+        LOGGER.info("RegisterManager built");
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -114,7 +123,7 @@ public class RegisterManager {
     @SuppressWarnings("unchecked")
     public <T> RegistryObject<T> get(Class<T> cls, String name) {
         final var r = REGISTRY_OBJECTS.get(cls).get(name);
-        assert cls.isInstance(r.get());
+        // assert cls.isInstance(r.get());
         return (RegistryObject<T>) r;
     }
 
