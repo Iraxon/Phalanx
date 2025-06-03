@@ -3,6 +3,7 @@ package net.iraxon.phalanx.common;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import net.minecraft.world.entity.EntityType;
@@ -27,12 +28,6 @@ public class RegisterManager {
     private final String id;
     private final IEventBus modEventBus;
 
-    private final Map<Class<?>, IForgeRegistry<?>> REGISTRY_MAP = Map.of(
-        Block.class, ForgeRegistries.BLOCKS,
-        Item.class, ForgeRegistries.ITEMS,
-        Fluid.class, ForgeRegistries.FLUIDS,
-        EntityType.class, ForgeRegistries.ENTITY_TYPES
-    );
     private final Map<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
     private final Map<Class<?>, Map<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
     private final Map<CreativeModeTab, List<Item>> tabAssignments = new HashMap<>();
@@ -76,38 +71,22 @@ public class RegisterManager {
 
     @SuppressWarnings("unchecked")
     private <T> IForgeRegistry<T> findRegister(Class<T> cls) {
-        var r = REGISTRY_MAP.get(cls);
-        assert r.getValues().stream().allMatch(x -> cls.isInstance(x));
+        final Predicate<Class<?>> test = x -> x.isAssignableFrom(cls);
+        IForgeRegistry<?> r;
+
+        if (test.test(Block.class)) {
+            r = ForgeRegistries.BLOCKS;
+        } else if (test.test(EntityType.class)) {
+            r = ForgeRegistries.ENTITY_TYPES;
+        } else if (test.test(Fluid.class)) {
+            r = ForgeRegistries.FLUIDS;
+        } else if (test.test(Item.class)) {
+            r = ForgeRegistries.ITEMS;
+        } else {
+            throw new IllegalArgumentException("No known registry available for type " + cls);
+        }
+
         return (IForgeRegistry<T>) r;
-
-        // final Predicate<Class<?>> test = x -> x.isAssignableFrom(cls);
-        // IForgeRegistry<?> r;
-
-        // for (Field f : ForgeRegistries.class.getDeclaredFields()) {
-        //     if (test.test(f.getGenericType().getClass())) {
-        //         try {
-        //             return (IForgeRegistry<T>) f.get(null);
-        //         } catch (ClassCastException e) {
-        //         } catch (IllegalAccessException e) {
-        //             throw new RuntimeException(e);
-        //         }
-        //     }
-        // }
-        // return null;
-
-        // if (test.test(Block.class)) {
-        //     r = ForgeRegistries.BLOCKS;
-        // } else if (test.test(EntityType.class)) {
-        //     r = ForgeRegistries.ENTITY_TYPES;
-        // } else if (test.test(Fluid.class)) {
-        //     r = ForgeRegistries.FLUIDS;
-        // } else if (test.test(Item.class)) {
-        //     r = ForgeRegistries.ITEMS;
-        // } else {
-        //     throw new IllegalArgumentException("No known registry available for type " + cls);
-        // }
-
-        // return (IForgeRegistry<T>) r;
     }
 
     private <T> void addRegister(Class<T> key) {
@@ -140,7 +119,7 @@ public class RegisterManager {
     }
 
     public BlockElement newBlock(String string) {
-        return new BlockElement(this, string, Block.class, BlockBehaviour.Properties.of());
+        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of());
     }
 }
 

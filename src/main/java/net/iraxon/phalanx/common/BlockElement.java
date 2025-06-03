@@ -1,6 +1,6 @@
 package net.iraxon.phalanx.common;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.function.Function;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -38,32 +38,22 @@ interface ModElement<T> {
 }
 
 public record BlockElement(RegisterManager registerManager, String name,
-        Class<? extends Block> blockClass, BlockBehaviour.Properties properties) implements ModElement<Block> {
+        Function<BlockBehaviour.Properties, ? extends Block> blockConstructor, BlockBehaviour.Properties properties) implements ModElement<Block> {
 
     @Override
     public Block supply() {
-        try {
-            return blockClass().getConstructor(BlockBehaviour.Properties.class).newInstance(properties);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        return blockConstructor().apply(properties);
     }
 
     public void register() {
         registerManager.newElementFromSupplier(name, this::supply);
     }
 
-    public BlockElement blockClass(Class<? extends Block> blockClass) {
-        return new BlockElement(registerManager, name, blockClass, properties);
+    public BlockElement blockClass(Function<BlockBehaviour.Properties, ? extends Block> blockConstructor) {
+        return new BlockElement(registerManager, name, blockConstructor, properties);
     }
 
     public BlockElement properties(BlockBehaviour.Properties properties) {
-        return new BlockElement(registerManager, name, blockClass, properties);
+        return new BlockElement(registerManager, name, blockConstructor, properties);
     }
 }
