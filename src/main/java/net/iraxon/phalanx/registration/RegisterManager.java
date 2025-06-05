@@ -1,8 +1,10 @@
 package net.iraxon.phalanx.registration;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -32,9 +34,9 @@ public class RegisterManager {
     private final String id;
     private final IEventBus modEventBus;
 
-    private final Map<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
-    private final Map<Class<?>, Map<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
-    private final Map<CreativeModeTab, List<Item>> tabAssignments = new HashMap<>();
+    private final HashMap<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
+    private final HashMap<Class<?>, HashMap<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
+    private final HashMap<CreativeModeTab, ArrayList<RegistryObject<Item>>> tabAssignments = new HashMap<>();
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -42,7 +44,7 @@ public class RegisterManager {
         this.id = id;
         this.modEventBus = modEventBus;
 
-        modEventBus.addListener(this::addCreative);
+        modEventBus.addListener(this::executeTabAssignments);
     }
 
     // @SuppressWarnings("unchecked")
@@ -57,7 +59,7 @@ public class RegisterManager {
      * @param key The Class object of T
      * @param supplier A supplier that provides distinct instances of the element
      */
-    public <T> void newElementFromSupplier(String name, Class<T> key, Supplier<T> supplier) {
+    public <T> void newElementFromSupplier(String name, Class<T> key, Supplier<? extends T> supplier) {
         guaranteeRegister(key);
         LOGGER.info("Registering element " + name + " of class " + key + " with supplier " + supplier);
         REGISTRY_OBJECTS.get(key).put(name, getRegister(key).register(name, supplier));
@@ -70,7 +72,13 @@ public class RegisterManager {
         LOGGER.info("RegisterManager built");
     }
 
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+    public void putTabAssignmentOrder(RegistryObject<Item> i, CreativeModeTab t) {
+        if (!tabAssignments.containsKey(t))
+            tabAssignments.put(t, new ArrayList<>());
+        tabAssignments.get(t).add(i);
+    }
+
+    private void executeTabAssignments(BuildCreativeModeTabContentsEvent event) {
         var t = event.getTab();
         if (tabAssignments.containsKey(t)) {
             for (var i : tabAssignments.get(t))
@@ -80,16 +88,16 @@ public class RegisterManager {
 
     @SuppressWarnings("unchecked")
     private <T> IForgeRegistry<T> findRegister(Class<T> cls) {
-        final Predicate<Class<?>> test = x -> x.isAssignableFrom(cls);
+        final Predicate<Class<?>> clsSuperclass = x -> x.isAssignableFrom(cls);
         IForgeRegistry<?> r;
 
-        if (test.test(Block.class)) {
+        if (clsSuperclass.test(Block.class)) {
             r = ForgeRegistries.BLOCKS;
-        } else if (test.test(EntityType.class)) {
+        } else if (clsSuperclass.test(EntityType.class)) {
             r = ForgeRegistries.ENTITY_TYPES;
-        } else if (test.test(Fluid.class)) {
+        } else if (clsSuperclass.test(Fluid.class)) {
             r = ForgeRegistries.FLUIDS;
-        } else if (test.test(Item.class)) {
+        } else if (clsSuperclass.test(Item.class)) {
             r = ForgeRegistries.ITEMS;
         } else {
             throw new IllegalArgumentException("No known registry available for type " + cls);
@@ -122,13 +130,18 @@ public class RegisterManager {
 
     @SuppressWarnings("unchecked")
     public <T> RegistryObject<T> get(Class<T> cls, String name) {
-        final var r = REGISTRY_OBJECTS.get(cls).get(name);
+        final RegistryObject<?> r;
+        try {
+            r = REGISTRY_OBJECTS.get(cls).get(name);
+        } catch (NullPointerException e) {
+            throw new NoSuchElementException(e);
+        }
         // assert cls.isInstance(r.get());
         return (RegistryObject<T>) r;
     }
 
     public BlockElement newBlock(String string) {
-        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of());
+        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of(), true);
     }
 }
 
