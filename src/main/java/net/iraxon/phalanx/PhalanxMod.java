@@ -36,7 +36,7 @@ public class PhalanxMod {
         // Needs improvement:
         registries.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem((Block) registries.get(Block.class, "claim_block").get(), new Item.Properties()));
 
-        registries.newItem("command_scepter").properties(new Item.Properties().fireResistant());
+        registries.newItem("command_scepter").properties(new Item.Properties().fireResistant()).register();
 
         registries.build();
 
