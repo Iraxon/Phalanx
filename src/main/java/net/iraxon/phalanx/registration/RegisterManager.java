@@ -143,6 +143,10 @@ public class RegisterManager {
     public BlockElement newBlock(String string) {
         return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of(), true);
     }
+
+    public ItemElement newItem(String string) {
+        return new ItemElement(this, string, Item::new, new Item.Properties(), List.of());
+    }
 }
 
 class UnknownRegistryException extends IllegalArgumentException {

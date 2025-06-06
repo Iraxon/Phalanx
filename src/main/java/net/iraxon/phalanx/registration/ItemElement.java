@@ -25,4 +25,16 @@ public record ItemElement(RegisterManager registerManager, String name,
         }
         return r;
     }
+
+    public ItemElement constructor(Function<Item.Properties, ? extends Item> constructor) {
+        return new ItemElement(registerManager, name, constructor, properties, tabs);
+    }
+
+    public ItemElement properties(Item.Properties properties) {
+        return new ItemElement(registerManager, name, constructor, properties, tabs);
+    }
+
+    public ItemElement withoutBlockItem() {
+        return new ItemElement(registerManager, name, constructor, properties, tabs);
+    }
 }

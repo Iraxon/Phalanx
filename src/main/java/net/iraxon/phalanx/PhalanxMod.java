@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 import net.iraxon.phalanx.registration.RegisterManager;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.api.distmarker.Dist;
@@ -30,6 +33,10 @@ public class PhalanxMod {
         registries = new RegisterManager(MOD_ID, modEventBus);
 
         registries.newBlock("claim_block").properties(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)).register();
+        // Needs improvement:
+        registries.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem((Block) registries.get(Block.class, "claim_block").get(), new Item.Properties()));
+
+        registries.newItem("command_scepter").properties(new Item.Properties().fireResistant());
 
         registries.build();
 
