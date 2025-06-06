@@ -24,21 +24,20 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public class PhalanxMod {
     public static final String MOD_ID = "phalanx";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public final RegisterManager registries;
 
     public PhalanxMod(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
 
-        registries = new RegisterManager(MOD_ID, modEventBus);
+        final var regm = new RegisterManager(MOD_ID, modEventBus);
 
-        registries.newBlock("claim_block").properties(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)).register();
+        regm.newBlock("claim_block").properties(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)).register();
         // Needs improvement:
-        registries.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem((Block) registries.get(Block.class, "claim_block").get(), new Item.Properties()));
+        regm.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem(regm.getInstance(Block.class, "claim_block"), new Item.Properties()));
 
-        registries.newItem("command_scepter").properties(new Item.Properties().fireResistant()).register();
+        regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
 
-        registries.build();
+        regm.build();
 
         MinecraftForge.EVENT_BUS.register(this);
     }

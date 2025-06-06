@@ -145,7 +145,7 @@ public class RegisterManager {
      * @param <T> Type of the requested item
      * @return The result of applying .get() to the RegistryObject item (i.e. an instance of the item itself)
      */
-    public <T> T get2(Class<T> cls, String name) {
+    public <T> T getInstance(Class<T> cls, String name) {
         return get(cls, name).get();
     }
 
