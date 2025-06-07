@@ -153,16 +153,25 @@ public class RegisterManager {
         return get(cls, name).get();
     }
 
-    public BlockElement newBlock(String string) {
-        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of()/*, true*/);
+    public BlockElement newBlock(String name) {
+        return new BlockElement(this, name, Block::new, BlockBehaviour.Properties.of()/* , true */);
     }
 
-    public ItemElement newItem(String string) {
-        return new ItemElement(this, string, Item::new, new Item.Properties(), List.of());
+    public ItemElement newItem(String name) {
+        return new ItemElement(this, name, Item::new, new Item.Properties(), List.of());
     }
 
-    public ItemElement newBlockItem(String string) {
-        return new ItemElement(this, string, (p) -> new BlockItem(this.getInstance(Block.class, string), p),
+    /**
+     * Generates an ItemElement that will register a BlockItem
+     * for the Block that shares the given name
+     *
+     * The block must have been registered first!
+     *
+     * @param name The name of the Block (which the BlockItem will share)
+     * @return An ItemElement to configure the BlockItem
+     */
+    public ItemElement newBlockItem(String name) {
+        return new ItemElement(this, name, (p) -> new BlockItem(this.getInstance(Block.class, name), p),
                 new Item.Properties(), List.of());
     }
 }
