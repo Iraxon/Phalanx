@@ -67,11 +67,23 @@ public class RegisterManager {
         REGISTRY_OBJECTS.get(key).put(name, getRegister(key).register(name, supplier));
     }
 
-    public void build() {
+    /**
+     * Registers the elements stored in the RegisterManager
+     * to Forge
+     *
+     * It is advised to send the null output of this method
+     * to whatever variable you were using to hold the RegisterManager.
+     * This will cause NullPointerExceptions to raise if any of the
+     * other RegisterManager methods are called by accident.
+     *
+     * @return null
+     */
+    public RegisterManager build() {
         LOGGER.info("Building RegisterManager...");
         for (var r : REGISTERS.values())
             r.register(this.modEventBus);
         LOGGER.info("RegisterManager built");
+        return null;
     }
 
     public void putTabAssignmentOrder(RegistryObject<Item> i, ResourceKey<CreativeModeTab> t) {

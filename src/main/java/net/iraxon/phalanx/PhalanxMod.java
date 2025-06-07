@@ -34,7 +34,7 @@ public class PhalanxMod {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
 
-        final var regm = new RegisterManager(MOD_ID, modEventBus);
+        var regm = new RegisterManager(MOD_ID, modEventBus);
 
         regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
         regm.newBlockItem("claim_block").tabs(List.of(CreativeModeTabs.FUNCTIONAL_BLOCKS)).register();
@@ -42,7 +42,7 @@ public class PhalanxMod {
 
         regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
 
-        regm.build();
+        regm = regm.build();
 
         MinecraftForge.EVENT_BUS.register(this);
     }
