@@ -8,13 +8,8 @@ import com.mojang.logging.LogUtils;
 
 import net.iraxon.phalanx.claim.ClaimBlock;
 import net.iraxon.phalanx.registration.RegisterManager;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -38,7 +33,6 @@ public class PhalanxMod {
 
         regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
         regm.newBlockItem("claim_block").tabs(List.of(CreativeModeTabs.FUNCTIONAL_BLOCKS)).register();
-        // Needs improvement:
 
         regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
 
