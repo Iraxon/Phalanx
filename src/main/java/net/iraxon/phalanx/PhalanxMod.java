@@ -39,8 +39,6 @@ public class PhalanxMod {
         regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
         regm.newBlockItem("claim_block").tabs(List.of(CreativeModeTabs.FUNCTIONAL_BLOCKS)).register();
         // Needs improvement:
-        // regm.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem(regm.getInstance(Block.class, "claim_block"), new Item.Properties()));
-        // regm.newItem("claim_block").constructor((properties) -> new BlockItem(regm.getInstance(Block.class, "claim_block"), properties)).register();
 
         regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
 
