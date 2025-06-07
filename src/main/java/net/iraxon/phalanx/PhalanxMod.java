@@ -1,11 +1,16 @@
 package net.iraxon.phalanx;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+import net.iraxon.phalanx.claim.ClaimBlock;
 import net.iraxon.phalanx.registration.RegisterManager;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -31,9 +36,11 @@ public class PhalanxMod {
 
         final var regm = new RegisterManager(MOD_ID, modEventBus);
 
-        regm.newBlock("claim_block").properties(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)).register();
+        regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
+        regm.newBlockItem("claim_block").tabs(List.of(CreativeModeTabs.FUNCTIONAL_BLOCKS)).register();
         // Needs improvement:
-        regm.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem(regm.getInstance(Block.class, "claim_block"), new Item.Properties()));
+        // regm.newElementFromSupplier("claim_block", Item.class, () -> new BlockItem(regm.getInstance(Block.class, "claim_block"), new Item.Properties()));
+        // regm.newItem("claim_block").constructor((properties) -> new BlockItem(regm.getInstance(Block.class, "claim_block"), properties)).register();
 
         regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
 
