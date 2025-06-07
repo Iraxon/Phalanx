@@ -1,5 +1,14 @@
 package net.iraxon.phalanx.registration;
 
+/**
+ * An interface for Element objects that allow easy use of
+ * a RegisterManager
+ *
+ * Call RegisterManager.new[block/item/etc.] to get a ModElement instance.
+ * Use chained calls of that instance's methods and then .register() to add an
+ * element to your mod.
+ */
+
 public interface ModElement<T> {
 
     /**
