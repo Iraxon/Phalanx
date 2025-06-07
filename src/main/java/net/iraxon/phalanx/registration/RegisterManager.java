@@ -154,7 +154,7 @@ public class RegisterManager {
     }
 
     public BlockElement newBlock(String string) {
-        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of(), true);
+        return new BlockElement(this, string, Block::new, BlockBehaviour.Properties.of()/*, true*/);
     }
 
     public ItemElement newItem(String string) {
