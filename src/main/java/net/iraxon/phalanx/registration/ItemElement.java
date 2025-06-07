@@ -3,11 +3,12 @@ package net.iraxon.phalanx.registration;
 import java.util.List;
 import java.util.function.Function;
 
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 
 public record ItemElement(RegisterManager registerManager, String name,
-        Function<Item.Properties, ? extends Item> constructor, Item.Properties properties, List<CreativeModeTab> tabs)
+        Function<Item.Properties, ? extends Item> constructor, Item.Properties properties, List<ResourceKey<CreativeModeTab>> tabs)
         implements ConstructedElement<Item.Properties, Item> {
 
     @Override
@@ -34,7 +35,7 @@ public record ItemElement(RegisterManager registerManager, String name,
         return new ItemElement(registerManager, name, constructor, properties, tabs);
     }
 
-    public ItemElement withoutBlockItem() {
+    public ItemElement tabs(List<ResourceKey<CreativeModeTab>> tabs) {
         return new ItemElement(registerManager, name, constructor, properties, tabs);
     }
 }

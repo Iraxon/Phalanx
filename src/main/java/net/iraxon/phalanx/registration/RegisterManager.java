@@ -3,7 +3,6 @@ package net.iraxon.phalanx.registration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -12,7 +11,9 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -36,7 +37,7 @@ public class RegisterManager {
 
     private final HashMap<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
     private final HashMap<Class<?>, HashMap<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
-    private final HashMap<CreativeModeTab, ArrayList<RegistryObject<Item>>> tabAssignments = new HashMap<>();
+    private final HashMap<ResourceKey<CreativeModeTab>, ArrayList<RegistryObject<Item>>> tabAssignments = new HashMap<>();
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -49,14 +50,15 @@ public class RegisterManager {
 
     // @SuppressWarnings("unchecked")
     // public <T> void newElementFromSupplier(String name, Supplier<T> element) {
-    //     newElementFromSupplier(name, (Class<T>) element.get().getClass(), element);
+    // newElementFromSupplier(name, (Class<T>) element.get().getClass(), element);
     // }
 
     /**
      * Adds an element to the RegisterManager
-     * @param <T> The type of the element
-     * @param name The name, not including the mod id and colon, of the element
-     * @param key The Class object of T
+     *
+     * @param <T>      The type of the element
+     * @param name     The name, not including the mod id and colon, of the element
+     * @param key      The Class object of T
      * @param supplier A supplier that provides distinct instances of the element
      */
     public <T> void newElementFromSupplier(String name, Class<T> key, Supplier<? extends T> supplier) {
@@ -72,14 +74,14 @@ public class RegisterManager {
         LOGGER.info("RegisterManager built");
     }
 
-    public void putTabAssignmentOrder(RegistryObject<Item> i, CreativeModeTab t) {
+    public void putTabAssignmentOrder(RegistryObject<Item> i, ResourceKey<CreativeModeTab> t) {
         if (!tabAssignments.containsKey(t))
             tabAssignments.put(t, new ArrayList<>());
         tabAssignments.get(t).add(i);
     }
 
     private void executeTabAssignments(BuildCreativeModeTabContentsEvent event) {
-        var t = event.getTab();
+        var t = event.getTabKey();
         if (tabAssignments.containsKey(t)) {
             for (var i : tabAssignments.get(t))
                 event.accept(i);
@@ -142,8 +144,10 @@ public class RegisterManager {
 
     /**
      * Compaction of RegistryObject.get(__, __).get()
+     *
      * @param <T> Type of the requested item
-     * @return The result of applying .get() to the RegistryObject item (i.e. an instance of the item itself)
+     * @return The result of applying .get() to the RegistryObject item (i.e. an
+     *         instance of the item itself)
      */
     public <T> T getInstance(Class<T> cls, String name) {
         return get(cls, name).get();
@@ -155,6 +159,11 @@ public class RegisterManager {
 
     public ItemElement newItem(String string) {
         return new ItemElement(this, string, Item::new, new Item.Properties(), List.of());
+    }
+
+    public ItemElement newBlockItem(String string) {
+        return new ItemElement(this, string, (p) -> new BlockItem(this.getInstance(Block.class, string), p),
+                new Item.Properties(), List.of());
     }
 }
 
