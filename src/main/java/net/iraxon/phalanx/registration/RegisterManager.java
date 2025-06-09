@@ -71,19 +71,15 @@ public class RegisterManager {
      * Registers the elements stored in the RegisterManager
      * to Forge
      *
-     * It is advised to assign the null output of this method
-     * to whatever variable you were using to hold the RegisterManager.
-     * This will cause NullPointerExceptions to raise if any of the
-     * other RegisterManager methods are called by accident.
+     * No more elements should be registered after this is called. This method should never be called more than once.
      *
      * @return null
      */
-    public RegisterManager build() {
+    public void build() {
         LOGGER.info("Building RegisterManager...");
         for (var r : REGISTERS.values())
             r.register(this.modEventBus);
         LOGGER.info("RegisterManager built");
-        return null;
     }
 
     public void putTabAssignmentOrder(RegistryObject<Item> i, ResourceKey<CreativeModeTab> t) {
