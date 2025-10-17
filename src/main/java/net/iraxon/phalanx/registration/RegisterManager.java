@@ -35,8 +35,17 @@ public class RegisterManager {
     private final String id;
     private final IEventBus modEventBus;
 
+    /**
+     * A map from types to the DeferredRegister for those types
+     */
     private final HashMap<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
+    /**
+     * A map from types to the RegisterManager's stored RegistryObject instances of that type
+     */
     private final HashMap<Class<?>, HashMap<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
+    /**
+     * A map from CreativeModeTab ResourceKeys to lists of items to be put into that tab
+     */
     private final HashMap<ResourceKey<CreativeModeTab>, ArrayList<RegistryObject<Item>>> tabAssignments = new HashMap<>();
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -69,7 +78,7 @@ public class RegisterManager {
 
     /**
      * Registers the elements stored in the RegisterManager
-     * to Forge
+     * to Forge.
      *
      * No more elements should be registered after this is called. This method should never be called more than once.
      *
