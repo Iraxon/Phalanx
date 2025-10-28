@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -40,11 +41,13 @@ public class RegisterManager {
      */
     private final HashMap<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
     /**
-     * A map from types to the RegisterManager's stored RegistryObject instances of that type
+     * A map from types to the RegisterManager's stored RegistryObject instances of
+     * that type
      */
     private final HashMap<Class<?>, HashMap<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
     /**
-     * A map from CreativeModeTab ResourceKeys to lists of items to be put into that tab
+     * A map from CreativeModeTab ResourceKeys to lists of items to be put into that
+     * tab
      */
     private final HashMap<ResourceKey<CreativeModeTab>, ArrayList<RegistryObject<Item>>> tabAssignments = new HashMap<>();
 
@@ -80,7 +83,8 @@ public class RegisterManager {
      * Registers the elements stored in the RegisterManager
      * to Forge.
      *
-     * No more elements should be registered after this is called. This method should never be called more than once.
+     * No more elements should be registered after this is called. This method
+     * should never be called more than once.
      *
      * @return null
      */
@@ -190,6 +194,139 @@ public class RegisterManager {
     public ItemElement newBlockItem(String name) {
         return new ItemElement(this, name, (p) -> new BlockItem(this.getInstance(Block.class, name), p),
                 new Item.Properties(), List.of());
+    }
+
+    /**
+     * An interface for Element objects that allow easy use of
+     * a RegisterManager
+     *
+     * Call RegisterManager.new[block/item/etc.] to get a ModElement instance.
+     * Use chained calls of that instance's methods and then .register() to add an
+     * element to your mod.
+     */
+
+    public interface ModElement<T> {
+
+        /**
+         * @return The RegisterManager used to create this ModElement, which will
+         *         register it when it is done
+         */
+        public RegisterManager registerManager();
+
+        /**
+         * @return The registry name (not included the mod id or colon) of the object to
+         *         be registered
+         */
+        public String name();
+
+        /**
+         * @return The Class object for the object being represented (Block.class for a
+         *         block, for example)
+         */
+        public Class<T> type();
+
+        /**
+         * A supplier for the object to be registered; it must return distinct instances
+         * every call
+         *
+         * @return A unique insance of the object to be registered
+         */
+        public T supply();
+
+        /**
+         * Sends this ModElement to the RegisterManager for registration
+         *
+         * @return The RegisterManager, for conveneint chaining
+         */
+        public default RegisterManager register() {
+            registerManager().newElementFromSupplier(name(), type(), this::supply);
+            return registerManager();
+        }
+    }
+
+    public interface ConstructedElement<P, T> extends ModElement<T> {
+
+        @Override
+        public default T supply() {
+            return constructor().apply(properties());
+        }
+
+        public P properties();
+
+        public Function<P, ? extends T> constructor();
+    }
+
+    public record ItemElement(RegisterManager registerManager, String name,
+            Function<Item.Properties, ? extends Item> constructor, Item.Properties properties,
+            List<ResourceKey<CreativeModeTab>> tabs)
+            implements ConstructedElement<Item.Properties, Item> {
+
+        @Override
+        public Class<Item> type() {
+            return Item.class;
+        }
+
+        @Override
+        public RegisterManager register() {
+            var r = ConstructedElement.super.register();
+            if (!tabs.isEmpty()) {
+                for (var t : tabs) {
+                    registerManager.putTabAssignmentOrder(registerManager.get(Item.class, name()), t);
+                }
+            }
+            return r;
+        }
+
+        public ItemElement constructor(Function<Item.Properties, ? extends Item> constructor) {
+            return new ItemElement(registerManager, name, constructor, properties, tabs);
+        }
+
+        public ItemElement properties(Item.Properties properties) {
+            return new ItemElement(registerManager, name, constructor, properties, tabs);
+        }
+
+        public ItemElement tabs(List<ResourceKey<CreativeModeTab>> tabs) {
+            return new ItemElement(registerManager, name, constructor, properties, tabs);
+        }
+    }
+
+    public record BlockElement(RegisterManager registerManager, String name,
+            Function<BlockBehaviour.Properties, ? extends Block> constructor,
+            BlockBehaviour.Properties properties/* , boolean blockItem */)
+            implements ConstructedElement<BlockBehaviour.Properties, Block> {
+
+        @Override
+        public Block supply() {
+            return constructor.apply(properties);
+        }
+
+        @Override
+        public Class<Block> type() {
+            return Block.class;
+        }
+
+        @Override
+        public RegisterManager register() {
+            var r = ConstructedElement.super.register();
+            // if (blockItem) {
+            // registerManager.newElementFromSupplier(name, BlockItem.class, () -> new
+            // BlockItem(
+            // registerManager.get(Block.class, name).get(), new Item.Properties()));
+            // }
+            return r;
+        }
+
+        public BlockElement constructor(Function<BlockBehaviour.Properties, ? extends Block> blockConstructor) {
+            return new BlockElement(registerManager, name, blockConstructor, properties/* , blockItem */);
+        }
+
+        public BlockElement properties(BlockBehaviour.Properties properties) {
+            return new BlockElement(registerManager, name, constructor, properties/* , blockItem */);
+        }
+
+        public BlockElement withoutBlockItem() {
+            return new BlockElement(registerManager, name, constructor, properties/* , false */);
+        }
     }
 }
 
