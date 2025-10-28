@@ -129,25 +129,15 @@ public class RegisterManager {
         return (IForgeRegistry<T>) r;
     }
 
-    private <T> void addRegister(Class<T> key) {
-        REGISTERS.put(key, DeferredRegister.create(findRegister(key), id));
-        REGISTRY_OBJECTS.put(key, new HashMap<>());
-    }
-
-    private <T> boolean isRegister(Class<T> key) {
-        return REGISTERS.containsKey(key);
-    }
-
     private <T> void guaranteeRegister(Class<T> key) {
-        if (!isRegister(key))
-            addRegister(key);
+        if (REGISTERS.containsKey(key))
+            REGISTERS.put(key, DeferredRegister.create(findRegister(key), id));
+        REGISTRY_OBJECTS.put(key, new HashMap<>());
     }
 
     @SuppressWarnings("unchecked")
     public <T> DeferredRegister<T> getRegister(Class<T> key) {
-        if (!isRegister(key)) {
-            throw new UnknownRegistryException("Unknown key: " + key);
-        }
+        guaranteeRegister(key);
         return (DeferredRegister<T>) REGISTERS.get(key);
     }
 
