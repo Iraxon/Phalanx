@@ -261,8 +261,18 @@ public class RegisterManager {
             return new ItemElement(registerManager, name, constructor, properties, tabs);
         }
 
+        /**
+         * Sets the item to be in all of the listed Creative tabs
+         */
         public ItemElement tabs(List<ResourceKey<CreativeModeTab>> tabs) {
             return new ItemElement(registerManager, name, constructor, properties, tabs);
+        }
+
+        /**
+         * Sets the item to be in only one Creative tab
+         */
+        public ItemElement tab(ResourceKey<CreativeModeTab> tab) {
+            return new ItemElement(registerManager, name, constructor, properties, List.of(tab));
         }
     }
 

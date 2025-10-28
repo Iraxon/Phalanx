@@ -33,9 +33,9 @@ public class PhalanxMod {
         regm = new RegisterManager(MOD_ID, modEventBus);
 
         regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
-        regm.newBlockItem("claim_block").tabs(List.of(CreativeModeTabs.FUNCTIONAL_BLOCKS)).register();
+        regm.newBlockItem("claim_block").tab(CreativeModeTabs.FUNCTIONAL_BLOCKS).register();
 
-        regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).register();
+        regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).tab(CreativeModeTabs.COMBAT).register();
 
         regm.build();
 
