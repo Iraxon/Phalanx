@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -13,13 +12,11 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -39,12 +36,12 @@ public class RegisterManager {
     /**
      * A map from types to the DeferredRegister for those types
      */
-    private final HashMap<Class<?>, DeferredRegister<?>> REGISTERS = new HashMap<>();
+    private final HashMap<IForgeRegistry<?>, DeferredRegister<?>> deferred_registers = new HashMap<>();
     /**
      * A map from types to the RegisterManager's stored RegistryObject instances of
      * that type
      */
-    private final HashMap<Class<?>, HashMap<String, RegistryObject<?>>> REGISTRY_OBJECTS = new HashMap<>();
+    private final HashMap<IForgeRegistry<?>, HashMap<String, RegistryObject<?>>> registry_objects = new HashMap<>();
     /**
      * A map from CreativeModeTab ResourceKeys to lists of items to be put into that
      * tab
@@ -70,13 +67,13 @@ public class RegisterManager {
      *
      * @param <T>      The type of the element
      * @param name     The name, not including the mod id and colon, of the element
-     * @param key      The Class object of T
+     * @param registry      The register for T
      * @param supplier A supplier that provides distinct instances of the element
      */
-    public <T> void newElementFromSupplier(String name, Class<T> key, Supplier<? extends T> supplier) {
-        guaranteeRegister(key);
-        LOGGER.info("Registering element " + name + " of class " + key + " with supplier " + supplier);
-        REGISTRY_OBJECTS.get(key).put(name, getRegister(key).register(name, supplier));
+    public <T> void newElementFromSupplier(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
+        guaranteeRegister(registry);
+        LOGGER.info("Registering element " + name + " of class " + registry + " with supplier " + supplier);
+        registry_objects.get(registry).put(name, getRegister(registry).register(name, supplier));
     }
 
     /**
@@ -90,7 +87,7 @@ public class RegisterManager {
      */
     public void build() {
         LOGGER.info("Building RegisterManager...");
-        for (var r : REGISTERS.values())
+        for (var r : deferred_registers.values())
             r.register(this.modEventBus);
         LOGGER.info("RegisterManager built");
     }
@@ -109,43 +106,23 @@ public class RegisterManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> IForgeRegistry<T> findRegister(Class<T> cls) {
-        final Predicate<Class<?>> clsSuperclass = x -> x.isAssignableFrom(cls);
-        IForgeRegistry<?> r;
-
-        if (clsSuperclass.test(Block.class)) {
-            r = ForgeRegistries.BLOCKS;
-        } else if (clsSuperclass.test(EntityType.class)) {
-            r = ForgeRegistries.ENTITY_TYPES;
-        } else if (clsSuperclass.test(Fluid.class)) {
-            r = ForgeRegistries.FLUIDS;
-        } else if (clsSuperclass.test(Item.class)) {
-            r = ForgeRegistries.ITEMS;
-        } else {
-            throw new IllegalArgumentException("No known registry available for type " + cls);
-        }
-
-        return (IForgeRegistry<T>) r;
-    }
-
-    private <T> void guaranteeRegister(Class<T> key) {
-        if (REGISTERS.containsKey(key))
-            REGISTERS.put(key, DeferredRegister.create(findRegister(key), id));
-        REGISTRY_OBJECTS.put(key, new HashMap<>());
+    private <T> void guaranteeRegister(IForgeRegistry<T> forgeRegistry) {
+        if (deferred_registers.containsKey(forgeRegistry))
+            deferred_registers.put(forgeRegistry, DeferredRegister.create(forgeRegistry, id));
+        registry_objects.put(forgeRegistry, new HashMap<>());
     }
 
     @SuppressWarnings("unchecked")
-    public <T> DeferredRegister<T> getRegister(Class<T> key) {
-        guaranteeRegister(key);
-        return (DeferredRegister<T>) REGISTERS.get(key);
+    public <T> DeferredRegister<T> getRegister(IForgeRegistry<T> forgeRegistry) {
+        guaranteeRegister(forgeRegistry);
+        return (DeferredRegister<T>) deferred_registers.get(forgeRegistry);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> RegistryObject<T> get(Class<T> cls, String name) {
+    public <T> RegistryObject<T> get(IForgeRegistry<T> registry, String name) {
         final RegistryObject<?> r;
         try {
-            r = REGISTRY_OBJECTS.get(cls).get(name);
+            r = registry_objects.get(registry).get(name);
         } catch (NullPointerException e) {
             throw new NoSuchElementException(e);
         }
@@ -154,14 +131,14 @@ public class RegisterManager {
     }
 
     /**
-     * Compaction of RegistryObject.get(__, __).get()
+     * Compaction of RegistryManager.get(__, __).get()
      *
      * @param <T> Type of the requested item
      * @return The result of applying .get() to the RegistryObject item (i.e. an
      *         instance of the item itself)
      */
-    public <T> T getInstance(Class<T> cls, String name) {
-        return get(cls, name).get();
+    public <T> T getInstance(IForgeRegistry<T> registry, String name) {
+        return get(registry, name).get();
     }
 
     public BlockElement newBlock(String name) {
@@ -182,7 +159,7 @@ public class RegisterManager {
      * @return An ItemElement to configure the BlockItem
      */
     public ItemElement newBlockItem(String name) {
-        return new ItemElement(this, name, (p) -> new BlockItem(this.getInstance(Block.class, name), p),
+        return new ItemElement(this, name, (p) -> new BlockItem(this.getInstance(ForgeRegistries.BLOCKS, name), p),
                 new Item.Properties(), List.of());
     }
 
@@ -210,10 +187,9 @@ public class RegisterManager {
         public String name();
 
         /**
-         * @return The Class object for the object being represented (Block.class for a
-         *         block, for example)
+         * @return The Forge register that this element needs to be registered to eventually
          */
-        public Class<T> type();
+        public IForgeRegistry<T> targetRegister();
 
         /**
          * A supplier for the object to be registered; it must return distinct instances
@@ -229,7 +205,7 @@ public class RegisterManager {
          * @return The RegisterManager, for conveneint chaining
          */
         public default RegisterManager register() {
-            registerManager().newElementFromSupplier(name(), type(), this::supply);
+            registerManager().newElementFromSupplier(name(), targetRegister(), this::supply);
             return registerManager();
         }
     }
@@ -252,8 +228,8 @@ public class RegisterManager {
             implements ConstructedElement<Item.Properties, Item> {
 
         @Override
-        public Class<Item> type() {
-            return Item.class;
+        public IForgeRegistry<Item> targetRegister() {
+            return ForgeRegistries.ITEMS;
         }
 
         @Override
@@ -261,7 +237,7 @@ public class RegisterManager {
             var r = ConstructedElement.super.register();
             if (!tabs.isEmpty()) {
                 for (var t : tabs) {
-                    registerManager.putTabAssignmentOrder(registerManager.get(Item.class, name()), t);
+                    registerManager.putTabAssignmentOrder(registerManager.get(ForgeRegistries.ITEMS, name()), t);
                 }
             }
             return r;
@@ -291,8 +267,8 @@ public class RegisterManager {
         }
 
         @Override
-        public Class<Block> type() {
-            return Block.class;
+        public IForgeRegistry<Block> targetRegister() {
+            return ForgeRegistries.BLOCKS;
         }
 
         @Override
