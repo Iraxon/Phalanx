@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,12 +37,12 @@ public class RegisterManager {
     /**
      * A map from types to the DeferredRegister for those types
      */
-    private final HashMap<IForgeRegistry<?>, DeferredRegister<?>> deferred_registers = new HashMap<>();
+    private final ConcurrentHashMap<IForgeRegistry<?>, DeferredRegister<?>> deferred_registers = new ConcurrentHashMap<>();
     /**
      * A map from types to the RegisterManager's stored RegistryObject instances of
      * that type
      */
-    private final HashMap<IForgeRegistry<?>, HashMap<String, RegistryObject<?>>> registry_objects_maps = new HashMap<>();
+    private final HashMap<IForgeRegistry<?>, HashMap<String, RegistryObject<?>>> registry_object_maps = new HashMap<>();
     /**
      * A map from CreativeModeTab ResourceKeys to lists of items to be put into that
      * tab
@@ -74,9 +75,8 @@ public class RegisterManager {
      * @param supplier A supplier that provides distinct instances of the element
      */
     public <T> void newElement(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
-        guaranteeRegister(registry);
         LOGGER.info("Registering element " + name + " for register " + registry + " with supplier " + supplier);
-        registry_objects_maps.get(registry).put(name, getDeferredRegister(registry).register(name, supplier));
+        registry_object_maps.get(registry).put(name, getDeferredRegister(registry).register(name, supplier));
     }
 
     /**
@@ -97,6 +97,7 @@ public class RegisterManager {
 
     /**
      * Tells the RegisterManager to put an item into a Creative tab
+     *
      * @param i The item RegistryObject
      * @param t The tab ResourceKey
      */
@@ -106,23 +107,17 @@ public class RegisterManager {
         tabAssignments.get(t).add(i);
     }
 
-    private <T> void guaranteeRegister(IForgeRegistry<T> forgeRegistry) {
-        if (deferred_registers.containsKey(forgeRegistry))
-            deferred_registers.put(forgeRegistry, DeferredRegister.create(forgeRegistry, id));
-        registry_objects_maps.put(forgeRegistry, new HashMap<>());
-    }
-
     @SuppressWarnings("unchecked")
     public <T> DeferredRegister<T> getDeferredRegister(IForgeRegistry<T> forgeRegistry) {
-        guaranteeRegister(forgeRegistry);
-        return (DeferredRegister<T>) deferred_registers.get(forgeRegistry);
+        return (DeferredRegister<T>) deferred_registers.computeIfAbsent(forgeRegistry,
+                r -> DeferredRegister.create(r, id));
     }
 
     @SuppressWarnings("unchecked")
     public <T> RegistryObject<T> get(IForgeRegistry<T> registry, String name) {
         final RegistryObject<?> r;
         try {
-            r = registry_objects_maps.get(registry).get(name);
+            r = registry_object_maps.get(registry).get(name);
         } catch (NullPointerException e) {
             throw new NoSuchElementException(e);
         }
@@ -186,7 +181,8 @@ public class RegisterManager {
         public String name();
 
         /**
-         * @return The Forge register that this element needs to be registered to eventually
+         * @return The Forge register that this element needs to be registered to
+         *         eventually
          */
         public IForgeRegistry<T> targetRegister();
 
@@ -210,7 +206,8 @@ public class RegisterManager {
     }
 
     /**
-     * A mod element that consists of a properties object and a constructor that returns an instance
+     * A mod element that consists of a properties object and a constructor that
+     * returns an instance
      * given that properties object
      */
     public interface ConstructedElement<P, T> extends ModElement<T> {
