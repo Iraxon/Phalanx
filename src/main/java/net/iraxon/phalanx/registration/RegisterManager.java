@@ -79,6 +79,12 @@ public class RegisterManager {
         registry_object_maps.get(registry).put(name, getDeferredRegister(registry).register(name, supplier));
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> DeferredRegister<T> getDeferredRegister(IForgeRegistry<T> forgeRegistry) {
+        return (DeferredRegister<T>) deferred_registers.computeIfAbsent(forgeRegistry,
+                r -> DeferredRegister.create(r, id));
+    }
+
     /**
      * Registers the elements stored in the RegisterManager
      * to Forge.
@@ -107,12 +113,15 @@ public class RegisterManager {
         tabAssignments.get(t).add(i);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> DeferredRegister<T> getDeferredRegister(IForgeRegistry<T> forgeRegistry) {
-        return (DeferredRegister<T>) deferred_registers.computeIfAbsent(forgeRegistry,
-                r -> DeferredRegister.create(r, id));
-    }
-
+    /**
+     * Retrieves a RegistryObject
+     *
+     * @param <T>      The type
+     * @param registry The ForgeRegistry that the desired object would be registered
+     *                 to (e.g. ForgeRegistries.BLOCKS for a block)
+     * @param name     The object's name
+     * @return The RegistryObject
+     */
     @SuppressWarnings("unchecked")
     public <T> RegistryObject<T> get(IForgeRegistry<T> registry, String name) {
         final RegistryObject<?> r;
@@ -294,10 +303,10 @@ public class RegisterManager {
             return new BlockElement(registerManager, name, constructor, properties/* , false */);
         }
     }
-}
 
-class UnknownRegistryException extends IllegalArgumentException {
-    public UnknownRegistryException(String s) {
-        super(s);
+    class UnknownRegistryException extends IllegalArgumentException {
+        public UnknownRegistryException(String s) {
+            super(s);
+        }
     }
 }
