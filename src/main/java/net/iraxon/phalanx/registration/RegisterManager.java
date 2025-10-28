@@ -74,9 +74,11 @@ public class RegisterManager {
      * @param registry The register for T
      * @param supplier A supplier that provides distinct instances of the element
      */
-    public <T> void newElement(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
+    @SuppressWarnings("unchecked")
+    public <T> RegistryObject<T> newElement(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
         LOGGER.info("Registering element " + name + " for register " + registry + " with supplier " + supplier);
-        registry_object_maps.get(registry).put(name, getDeferredRegister(registry).register(name, supplier));
+        return (RegistryObject<T>) registry_object_maps.computeIfAbsent(registry, (r) -> new HashMap<>()).put(name,
+                getDeferredRegister(registry).register(name, supplier));
     }
 
     @SuppressWarnings("unchecked")
@@ -206,11 +208,10 @@ public class RegisterManager {
         /**
          * Sends this ModElement to the RegisterManager for registration
          *
-         * @return The RegisterManager, for conveneint chaining
+         * @return The resulting RegistryObject<T>
          */
-        public default RegisterManager register() {
-            registerManager().newElement(name(), targetRegister(), this::supply);
-            return registerManager();
+        public default RegistryObject<T> register() {
+            return registerManager().newElement(name(), targetRegister(), this::supply);
         }
     }
 
@@ -242,7 +243,7 @@ public class RegisterManager {
         }
 
         @Override
-        public RegisterManager register() {
+        public RegistryObject<Item> register() {
             var r = ConstructedElement.super.register();
             if (!tabs.isEmpty()) {
                 for (var t : tabs) {
@@ -281,13 +282,8 @@ public class RegisterManager {
         }
 
         @Override
-        public RegisterManager register() {
+        public RegistryObject<Block> register() {
             var r = ConstructedElement.super.register();
-            // if (blockItem) {
-            // registerManager.newElementFromSupplier(name, BlockItem.class, () -> new
-            // BlockItem(
-            // registerManager.get(Block.class, name).get(), new Item.Properties()));
-            // }
             return r;
         }
 
