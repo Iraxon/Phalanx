@@ -210,6 +210,10 @@ public class RegisterManager {
         }
     }
 
+    /**
+     * A mod element that consists of a properties object and a constructor that returns an instance
+     * given that properties object
+     */
     public interface ConstructedElement<P, T> extends ModElement<T> {
 
         @Override
