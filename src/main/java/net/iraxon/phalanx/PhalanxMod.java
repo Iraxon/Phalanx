@@ -1,7 +1,5 @@
 package net.iraxon.phalanx;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
