@@ -41,7 +41,7 @@ public class RegisterManager {
      * A map from types to the RegisterManager's stored RegistryObject instances of
      * that type
      */
-    private final HashMap<IForgeRegistry<?>, HashMap<String, RegistryObject<?>>> registry_objects = new HashMap<>();
+    private final HashMap<IForgeRegistry<?>, HashMap<String, RegistryObject<?>>> registry_objects_maps = new HashMap<>();
     /**
      * A map from CreativeModeTab ResourceKeys to lists of items to be put into that
      * tab
@@ -57,23 +57,26 @@ public class RegisterManager {
         modEventBus.addListener(this::executeTabAssignments);
     }
 
-    // @SuppressWarnings("unchecked")
-    // public <T> void newElementFromSupplier(String name, Supplier<T> element) {
-    // newElementFromSupplier(name, (Class<T>) element.get().getClass(), element);
-    // }
+    private void executeTabAssignments(BuildCreativeModeTabContentsEvent event) {
+        var t = event.getTabKey();
+        if (tabAssignments.containsKey(t)) {
+            for (var i : tabAssignments.get(t))
+                event.accept(i);
+        }
+    }
 
     /**
      * Adds an element to the RegisterManager
      *
      * @param <T>      The type of the element
      * @param name     The name, not including the mod id and colon, of the element
-     * @param registry      The register for T
+     * @param registry The register for T
      * @param supplier A supplier that provides distinct instances of the element
      */
-    public <T> void newElementFromSupplier(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
+    public <T> void newElement(String name, IForgeRegistry<T> registry, Supplier<? extends T> supplier) {
         guaranteeRegister(registry);
-        LOGGER.info("Registering element " + name + " of class " + registry + " with supplier " + supplier);
-        registry_objects.get(registry).put(name, getRegister(registry).register(name, supplier));
+        LOGGER.info("Registering element " + name + " for register " + registry + " with supplier " + supplier);
+        registry_objects_maps.get(registry).put(name, getDeferredRegister(registry).register(name, supplier));
     }
 
     /**
@@ -92,28 +95,25 @@ public class RegisterManager {
         LOGGER.info("RegisterManager built");
     }
 
-    public void putTabAssignmentOrder(RegistryObject<Item> i, ResourceKey<CreativeModeTab> t) {
+    /**
+     * Tells the RegisterManager to put an item into a Creative tab
+     * @param i The item RegistryObject
+     * @param t The tab ResourceKey
+     */
+    private void putTabAssignmentOrder(RegistryObject<Item> i, ResourceKey<CreativeModeTab> t) {
         if (!tabAssignments.containsKey(t))
             tabAssignments.put(t, new ArrayList<>());
         tabAssignments.get(t).add(i);
     }
 
-    private void executeTabAssignments(BuildCreativeModeTabContentsEvent event) {
-        var t = event.getTabKey();
-        if (tabAssignments.containsKey(t)) {
-            for (var i : tabAssignments.get(t))
-                event.accept(i);
-        }
-    }
-
     private <T> void guaranteeRegister(IForgeRegistry<T> forgeRegistry) {
         if (deferred_registers.containsKey(forgeRegistry))
             deferred_registers.put(forgeRegistry, DeferredRegister.create(forgeRegistry, id));
-        registry_objects.put(forgeRegistry, new HashMap<>());
+        registry_objects_maps.put(forgeRegistry, new HashMap<>());
     }
 
     @SuppressWarnings("unchecked")
-    public <T> DeferredRegister<T> getRegister(IForgeRegistry<T> forgeRegistry) {
+    public <T> DeferredRegister<T> getDeferredRegister(IForgeRegistry<T> forgeRegistry) {
         guaranteeRegister(forgeRegistry);
         return (DeferredRegister<T>) deferred_registers.get(forgeRegistry);
     }
@@ -122,11 +122,10 @@ public class RegisterManager {
     public <T> RegistryObject<T> get(IForgeRegistry<T> registry, String name) {
         final RegistryObject<?> r;
         try {
-            r = registry_objects.get(registry).get(name);
+            r = registry_objects_maps.get(registry).get(name);
         } catch (NullPointerException e) {
             throw new NoSuchElementException(e);
         }
-        // assert cls.isInstance(r.get());
         return (RegistryObject<T>) r;
     }
 
@@ -142,7 +141,7 @@ public class RegisterManager {
     }
 
     public BlockElement newBlock(String name) {
-        return new BlockElement(this, name, Block::new, BlockBehaviour.Properties.of()/* , true */);
+        return new BlockElement(this, name, Block::new, BlockBehaviour.Properties.of());
     }
 
     public ItemElement newItem(String name) {
@@ -205,7 +204,7 @@ public class RegisterManager {
          * @return The RegisterManager, for conveneint chaining
          */
         public default RegisterManager register() {
-            registerManager().newElementFromSupplier(name(), targetRegister(), this::supply);
+            registerManager().newElement(name(), targetRegister(), this::supply);
             return registerManager();
         }
     }
