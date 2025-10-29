@@ -25,6 +25,7 @@ public class WarhornItem extends Item {
         if (pUsedHand.equals(InteractionHand.MAIN_HAND)) {
             pLevel.playSound(pPlayer, pPlayer.blockPosition(), SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(6).get(),
                     SoundSource.MASTER);
+            pPlayer.getCooldowns().addCooldown(this, 7*20);
             return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide);
         }
         return InteractionResultHolder.pass(itemstack);
