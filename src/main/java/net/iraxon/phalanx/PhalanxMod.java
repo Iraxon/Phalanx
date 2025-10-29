@@ -61,12 +61,12 @@ public class PhalanxMod {
                 && !event.isCanceled()
                 && event.getEntity() != null
                 && event.getItem().is(regm.getInstance(ForgeRegistries.ITEMS, "warhorn"))) {
-            event.getEntity().level().playLocalSound(
+            event.getEntity().level().playSound(
+                    event.getEntity(),
                     event.getEntity().blockPosition(),
-                    SoundEvents.RAID_HORN.get(),
+                    SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(6).get(),
                     SoundSource.MASTER,
-                    16f, 0.5f,
-                    false);
+                    16f, 0.5f);
         }
     }
 }
