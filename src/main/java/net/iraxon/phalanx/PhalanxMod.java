@@ -6,24 +6,14 @@ import com.mojang.logging.LogUtils;
 
 import net.iraxon.phalanx.claim.ClaimBlock;
 import net.iraxon.phalanx.registration.RegisterManager;
-import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.iraxon.phalanx.warhorn.WarhornItem;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.ForgeRegistries;
 
 @Mod(PhalanxMod.MOD_ID)
 public class PhalanxMod {
@@ -37,36 +27,20 @@ public class PhalanxMod {
 
         regm = new RegisterManager(MOD_ID, modEventBus);
 
-        regm.newBlock("claim_block").constructor(ClaimBlock::new).register();
+        regm.newBlock("claim_block").properties(ClaimBlock.PROPERTIES).constructor(ClaimBlock::new).register();
         regm.newBlockItem("claim_block").tab(CreativeModeTabs.FUNCTIONAL_BLOCKS).register();
 
-        regm.newItem("warhorn").properties(new Item.Properties().fireResistant()).tab(CreativeModeTabs.COMBAT)
+        regm.newItem("warhorn").properties(WarhornItem.PROPERTIES).constructor(WarhornItem::new).tab(CreativeModeTabs.COMBAT)
                 .register();
 
         regm.build();
 
-        MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
     }
 
-    @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-    }
-
-    @SubscribeEvent
-    public void warhornFunctionality(LivingEntityUseItemEvent.Start event) {
-        if (event != null
-                && !event.isCanceled()
-                && event.getEntity() != null
-                && event.getItem().is(regm.getInstance(ForgeRegistries.ITEMS, "warhorn"))) {
-            event.getEntity().level().playSound(
-                    event.getEntity(),
-                    event.getEntity().blockPosition(),
-                    SoundEvents.GOAT_HORN_SOUND_VARIANTS.get(6).get(),
-                    SoundSource.MASTER,
-                    16f, 0.5f);
-        }
     }
 }
