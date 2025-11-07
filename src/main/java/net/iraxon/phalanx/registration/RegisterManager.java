@@ -123,8 +123,8 @@ public class RegisterManager {
      *                 to (e.g. ForgeRegistries.BLOCKS for a block)
      * @param name     The object's name
      * @return The RegistryObject
+     * @throws NoSuchElementException if the item does not exist
      */
-    @SuppressWarnings("unchecked")
     public <T> RegistryObject<T> get(IForgeRegistry<T> registry, String name) {
         final RegistryObject<?> r;
         try {
